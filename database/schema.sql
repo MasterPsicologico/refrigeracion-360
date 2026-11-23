@@ -1,0 +1,7 @@
+create extension if not exists pgcrypto;
+create table if not exists organizations(id uuid primary key default gen_random_uuid(),name text not null,created_at timestamptz not null default now());
+create table if not exists users(id uuid primary key default gen_random_uuid(),organization_id uuid not null references organizations(id) on delete cascade,username text not null unique,password_hash text not null,full_name text not null,role text not null check(role in ('owner','admin','technician','customer')),active boolean not null default true,created_at timestamptz not null default now());
+create unique index if not exists one_owner_per_organization on users(organization_id) where role='owner';
+create table if not exists service_orders(id uuid primary key default gen_random_uuid(),organization_id uuid not null references organizations(id) on delete cascade,customer_name text not null,phone text not null,address text not null,equipment text not null,description text not null,scheduled_at timestamptz,quoted_amount numeric(14,2) not null default 0,status text not null default 'Pendiente',created_by uuid references users(id),created_at timestamptz not null default now(),updated_at timestamptz not null default now());
+create table if not exists order_history(id bigserial primary key,order_id uuid not null references service_orders(id) on delete cascade,changed_by uuid references users(id),status text not null,created_at timestamptz not null default now());
+create index if not exists orders_org_created on service_orders(organization_id,created_at desc);
