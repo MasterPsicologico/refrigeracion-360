@@ -1,4 +1,4 @@
-import { sql } from "./_lib/db.js";
+import { db } from "./_lib/db.js";
 
 export default async function handler(req, res) {
   if (req.method !== "GET") {
@@ -6,7 +6,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    await sql`select 1`;
+    await db()`select 1`;
     return res.status(200).json({
       ok: true,
       application: "Refrigeración 360",
@@ -17,7 +17,7 @@ export default async function handler(req, res) {
       ok: false,
       application: "Refrigeración 360",
       database: "unavailable",
-      message: "Configure DATABASE_URL en las variables de entorno de Vercel."
+      message: "Revisa DATABASE_URL y DATABASE_URL_POOLED en Vercel."
     });
   }
 }
