@@ -1,0 +1,9 @@
+import { jwtVerify, SignJWT } from 'jose';
+import { db } from './db.js';
+const secret=()=>{if(!process.env.JWT_SECRET)throw new Error('Falta configurar JWT_SECRET en Vercel');return new TextEncoder().encode(process.env.JWT_SECRET)};
+export async function issue(res,user){const token=await new SignJWT({sub:user.id,role:user.role,organization_id:user.organization_id}).setProtectedHeader({alg:'HS256'}).setIssuedAt().setExpirationTime('7d').sign(secret());res.setHeader('Set-Cookie',`r360_session=${token}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=604800`);}
+export async function requireUser(req){const raw=req.headers.cookie?.split(';').map(x=>x.trim()).find(x=>x.startsWith('r360_session='))?.slice(13);if(!raw)throw Object.assign(new Error('Debes iniciar sesión'),{status:401});let payload;try{({payload}=await jwtVerify(raw,secret()))}catch{throw Object.assign(new Error('Sesión inválida o vencida'),{status:401})}const [u]=await db()`select id, username, full_name, role, organization_id, active from users where id=${payload.sub}`;if(!u||!u.active)throw Object.assign(new Error('Cuenta inactiva'),{status:401});return u;}
+export function clearSession(res){res.setHeader('Set-Cookie','r360_session=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0');}
+export function handler(fn){return async(req,res)=>{res.setHeader('Content-Type','application/json');res.setHeader('Cache-Control','no-store');try{await fn(req,res)}catch(e){res.status(e.status||500).json({error:e.message||'Error interno'})}}}
+export function only(req,res,method){if(req.method!==method){res.setHeader('Allow',method);res.status(405).json({error:'Método no permitido'});return false}return true}
+export async function admin(user){if(!['owner','admin'].includes(user.role))throw Object.assign(new Error('No tienes permisos'),{status:403})}
