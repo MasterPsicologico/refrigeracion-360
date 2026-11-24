@@ -18,5 +18,6 @@ export default handler(async (req, res) => {
   const history = await db()`
     select case when event_type = 'created' then 'Solicitud recibida' when event_type = 'assignment' then 'Técnico asignado: ' || coalesce(details->>'technician_name','pendiente de confirmar') when event_type = 'status' then 'Estado: ' || status else event_type end as status, created_at from order_history where order_id = ${order.id} order by created_at asc
   `;
-  res.json({ request: { ...order, code: 'R360-' + order.id.slice(0, 8).toUpperCase() }, history });
+  const attachments = await db()`select id,file_name,content_type,file_size,source,created_at from order_attachments where order_id = ${order.id} order by created_at desc`;
+  res.json({ request: { ...order, code: 'R360-' + order.id.slice(0, 8).toUpperCase() }, history, attachments });
 });
