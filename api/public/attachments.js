@@ -17,6 +17,8 @@ export default handler(async(req,res)=>{
   if(!order)return res.status(404).json({error:'Solicitud no encontrada.'});
   const name=typeof file_name==='string'?file_name.replace(/[^a-zA-Z0-9._-]/g,'_').slice(0,100):'evidencia-cliente';
   const file=await db().begin(async tx=>{
+    const [count] = await tx`select count(*)::int as total from order_attachments where order_id=${order.id}`;
+    if(count.total>=10)throw Object.assign(new Error('Esta solicitud alcanzó el límite de 10 fotos.'),{status:400});
     const [saved]=await tx`insert into order_attachments(order_id,source,file_name,content_type,file_size,file_data) values(${order.id},'customer',${name},${match[1]},${data.length},${data}) returning id,file_name,content_type,file_size,source,created_at`;
     await tx`insert into order_history(order_id,changed_by,status,event_type,details) values(${order.id},null,${order.status},'evidence',${tx.json({file_id:saved.id,file_name:name,source:'customer'})})`;
     return saved;
