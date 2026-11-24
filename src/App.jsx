@@ -50,7 +50,7 @@ function Orders({orders,admin,technician,members,changeStatus,assignOrder}){
 }
 function OrderCard({o,admin,technician,members,states,changeStatus,assignOrder}){
  const [history,setHistory]=useState([]),[historyOpen,setHistoryOpen]=useState(false),[historyLoading,setHistoryLoading]=useState(false),[attachments,setAttachments]=useState([]),[evidenceBusy,setEvidenceBusy]=useState(false),[evidenceError,setEvidenceError]=useState('');
- async function toggleHistory(){const next=!historyOpen;setHistoryOpen(next);if(next&&!history.length){setHistoryLoading(true);try{const d=await api('/orders/'+o.id);setHistory(d.history||[])}catch{}finally{setHistoryLoading(false)}}}
+ async function toggleHistory(){const next=!historyOpen;setHistoryOpen(next);if(next&&!history.length){setHistoryLoading(true);try{const d=await api('/orders/'+o.id);setHistory(d.history||[]);setAttachments(d.attachments||[])}catch{}finally{setHistoryLoading(false)}}}
  async function uploadEvidence(e){const file=e.target.files?.[0];e.target.value='';if(!file)return;setEvidenceError('');setEvidenceBusy(true);try{const data_url=await imageToDataUrl(file);await api('/orders/'+o.id+'/attachments',{method:'POST',body:JSON.stringify({data_url,file_name:file.name})});const detail=await api('/orders/'+o.id);setHistory(detail.history||[]);setAttachments(detail.attachments||[]);setHistoryOpen(true)}catch(err){setEvidenceError(err.message)}finally{setEvidenceBusy(false)}}
  const tone={'Pendiente':'amber','Asignado':'blue','Aceptado':'blue','En camino':'blue','En proceso':'blue','Terminado':'green','Pagado':'green','Cancelado':'red'}[o.status]||'amber';
  return <article className={'order order-'+tone}>
