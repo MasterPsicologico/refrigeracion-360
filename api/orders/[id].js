@@ -85,7 +85,7 @@ export default handler(async (req, res) => {
       returning *
     `;
 
-    if (hasStatus && nextStatus !== current.status) {
+    if (nextStatus !== current.status) {
       await tx`
         insert into order_history(order_id, changed_by, status, event_type, details)
         values (${current.id}, ${me.id}, ${nextStatus}, 'status', ${tx.json({ from: current.status, to: nextStatus, note })})
