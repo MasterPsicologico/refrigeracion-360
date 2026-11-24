@@ -5,9 +5,25 @@ import { handler, requireUser, admin, only } from '../_lib/auth.js';
 const states = ['Pendiente','Asignado','Aceptado','En camino','En proceso','Terminado','Pagado','Cancelado'];
 
 export default handler(async (req, res) => {
-  if (!only(req, res, 'PATCH')) return;
   await ensureSchema();
   const me = await requireUser(req);
+  if (req.method === 'GET') {
+    const [order] = await db()`
+      select o.*, u.full_name as assigned_to_name
+      from service_orders o left join users u on u.id = o.assigned_to
+      where o.id = ${req.query.id} and o.organization_id = ${me.organization_id}
+    `;
+    if (!order) return res.status(404).json({ error: 'Orden no encontrada.' });
+    if (me.role === 'technician' && order.assigned_to !== me.id) return res.status(403).json({ error: 'Esta orden no está asignada a tu usuario.' });
+    if (!['owner','admin','technician'].includes(me.role)) return res.status(403).json({ error: 'No tienes permisos.' });
+    const history = await db()`
+      select h.id,h.status,h.event_type,h.details,h.created_at,u.full_name as changed_by_name
+      from order_history h left join users u on u.id = h.changed_by
+      where h.order_id = ${order.id} order by h.created_at asc,h.id asc
+    `;
+    return res.json({ order, history });
+  }
+  if (!only(req, res, 'PATCH')) return;
   const isAdmin = ['owner','admin'].includes(me.role);
   if (!isAdmin && me.role !== 'technician') {
     return res.status(403).json({ error: 'No tienes permisos para modificar esta orden.' });
