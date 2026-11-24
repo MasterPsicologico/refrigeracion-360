@@ -98,6 +98,25 @@ export async function ensureSchema() {
       `;
 
       await tx`
+        create table if not exists order_attachments (
+          id uuid primary key default gen_random_uuid(),
+          order_id uuid not null references service_orders(id) on delete cascade,
+          uploaded_by uuid references users(id) on delete set null,
+          source text not null default 'staff' check (source in ('customer','staff')),
+          file_name text not null,
+          content_type text not null check (content_type in ('image/jpeg','image/png','image/webp')),
+          file_size integer not null,
+          file_data bytea not null,
+          created_at timestamptz not null default now()
+        )
+      `;
+
+      await tx`
+        create index if not exists attachments_order_created
+        on order_attachments(order_id, created_at desc)
+      `;
+
+      await tx`
         create index if not exists orders_assigned_to
         on service_orders(assigned_to, status)
       `;
