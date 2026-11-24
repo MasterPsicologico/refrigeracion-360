@@ -44,6 +44,7 @@ export async function ensureSchema() {
           phone text not null,
           address text not null,
           equipment text not null,
+          service_type text not null default 'Reparación',
           description text not null,
           scheduled_at timestamptz,
           quoted_amount numeric(14,2) not null default 0,
@@ -67,6 +68,11 @@ export async function ensureSchema() {
       await tx`
         alter table service_orders
         add column if not exists tracking_token_hash text
+      `;
+
+      await tx`
+        alter table service_orders
+        add column if not exists service_type text not null default 'Reparación'
       `;
 
       await tx`
