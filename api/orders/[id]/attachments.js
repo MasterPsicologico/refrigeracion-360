@@ -29,6 +29,8 @@ export default handler(async(req,res)=>{
   const image=decodeImage(data_url);
   const name=typeof file_name==='string'?file_name.replace(/[^a-zA-Z0-9._-]/g,'_').slice(0,100):'evidencia';
   const result=await db().begin(async tx=>{
+    const [count] = await tx`select count(*)::int as total from order_attachments where order_id=${orderId}`;
+    if(count.total>=30)throw Object.assign(new Error('Esta orden alcanzó el límite de 30 evidencias.'),{status:400});
     const [file]=await tx`insert into order_attachments(order_id,uploaded_by,source,file_name,content_type,file_size,file_data) values(${orderId},${me.id},'staff',${name},${image.contentType},${image.data.length},${image.data}) returning id,file_name,content_type,file_size,source,created_at`;
     const [current]=await tx`select status from service_orders where id=${orderId}`;
     await tx`insert into order_history(order_id,changed_by,status,event_type,details) values(${orderId},${me.id},${current.status},'evidence',${tx.json({file_id:file.id,file_name:name,source:'staff'})})`;
