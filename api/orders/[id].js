@@ -21,7 +21,8 @@ export default handler(async (req, res) => {
       from order_history h left join users u on u.id = h.changed_by
       where h.order_id = ${order.id} order by h.created_at asc,h.id asc
     `;
-    return res.json({ order, history });
+    const attachments = await db()`select id,file_name,content_type,file_size,source,created_at,uploaded_by from order_attachments where order_id = ${order.id} order by created_at desc`;
+    return res.json({ order, history, attachments });
   }
   if (!only(req, res, 'PATCH')) return;
   const isAdmin = ['owner','admin'].includes(me.role);
