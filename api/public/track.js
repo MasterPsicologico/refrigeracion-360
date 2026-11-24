@@ -10,7 +10,7 @@ export default handler(async (req, res) => {
   const token = typeof req.query.token === 'string' ? req.query.token : '';
   if (token.length < 30 || token.length > 100) return res.status(400).json({ error: 'Código de seguimiento inválido.' });
   const [order] = await db()`
-    select id, customer_name, equipment, description, status, created_at, updated_at
+    select id, customer_name, equipment, service_type, description, status, created_at, updated_at
     from service_orders where tracking_token_hash = ${hash(token)} limit 1
   `;
   if (!order) return res.status(404).json({ error: 'No encontramos una solicitud con ese enlace de seguimiento.' });
