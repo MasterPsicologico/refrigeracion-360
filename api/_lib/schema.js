@@ -65,6 +65,11 @@ export async function ensureSchema() {
       `;
 
       await tx`
+        alter table service_orders
+        add column if not exists tracking_token_hash text
+      `;
+
+      await tx`
         create index if not exists orders_org_created
         on service_orders(organization_id, created_at desc)
       `;
