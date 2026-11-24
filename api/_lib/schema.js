@@ -61,6 +61,8 @@ export async function ensureSchema() {
           order_id uuid not null references service_orders(id) on delete cascade,
           changed_by uuid references users(id),
           status text not null,
+          event_type text not null default 'status',
+          details jsonb not null default '{}'::jsonb,
           created_at timestamptz not null default now()
         )
       `;
@@ -73,6 +75,31 @@ export async function ensureSchema() {
       await tx`
         alter table service_orders
         add column if not exists service_type text not null default 'Reparación'
+      `;
+
+      await tx`
+        alter table service_orders
+        add column if not exists assigned_to uuid references users(id) on delete set null
+      `;
+
+      await tx`
+        alter table service_orders
+        add column if not exists assigned_at timestamptz
+      `;
+
+      await tx`
+        alter table order_history
+        add column if not exists event_type text not null default 'status'
+      `;
+
+      await tx`
+        alter table order_history
+        add column if not exists details jsonb not null default '{}'::jsonb
+      `;
+
+      await tx`
+        create index if not exists orders_assigned_to
+        on service_orders(assigned_to, status)
       `;
 
       await tx`
