@@ -27,6 +27,6 @@ export default handler(async (req, res) => {
       (${organization.id}, ${name}, ${contact}, ${place}, ${device}, ${kind}, ${problem}, 0, 'Pendiente', ${hash(token)})
     returning id, status, created_at
   `;
-  await db()`insert into order_history(order_id, changed_by, status) values(${order.id}, null, 'Pendiente')`;
+  await db()`insert into order_history(order_id, changed_by, status, event_type, details) values(${order.id}, null, 'Pendiente', 'created', ${db().json({source:'public'})})`;
   res.status(201).json({ request: { id: order.id, code: 'R360-' + order.id.slice(0, 8).toUpperCase(), status: order.status, created_at: order.created_at }, tracking_token: token });
 });
