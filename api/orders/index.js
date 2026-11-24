@@ -6,6 +6,7 @@ export default handler(async (req, res) => {
   await ensureSchema();
   const me = await requireUser(req);
   if (req.method === 'GET') {
+    if (!['owner','admin','technician'].includes(me.role)) return res.status(403).json({ error: 'No tienes permisos.' });
     const rows = await db()`
       select o.*, u.full_name as assigned_to_name
       from service_orders o
