@@ -69,7 +69,12 @@ export default handler(async (req, res) => {
       assignedAt = assignedTo ? (assignedTo === current.assigned_to ? current.assigned_at : new Date()) : null;
     }
 
-    const nextStatus = hasStatus ? body.status : current.status;
+    let nextStatus = hasStatus ? body.status : current.status;
+    if (hasAssignee && assignedTo && !hasStatus && current.status === 'Pendiente') nextStatus = 'Asignado';
+    if (hasAssignee && !assignedTo && !hasStatus && current.status === 'Asignado') nextStatus = 'Pendiente';
+    if (['Asignado','Aceptado','En camino','En proceso','Terminado','Pagado'].includes(nextStatus) && !assignedTo) {
+      throw Object.assign(new Error('Primero debes asignar un técnico a esta orden.'), { status: 400 });
+    }
     const [updated] = await tx`
       update service_orders
       set status = ${nextStatus},
