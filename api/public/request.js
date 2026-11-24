@@ -7,11 +7,11 @@ const hash = value => createHash('sha256').update(value).digest('hex');
 export default handler(async (req, res) => {
   if (!only(req, res, 'POST')) return;
   await ensureSchema();
-  const { customer_name, phone, address, equipment, description } = req.body || {};
+  const { customer_name, phone, address, equipment, service_type, description } = req.body || {};
   const clean = value => typeof value === 'string' ? value.trim() : '';
   const name = clean(customer_name), contact = clean(phone), place = clean(address);
-  const device = clean(equipment), problem = clean(description);
-  if (name.length < 2 || contact.length < 6 || place.length < 5 || device.length < 2 || problem.length < 10) {
+  const device = clean(equipment), kind = clean(service_type) || 'Reparación', problem = clean(description);
+  if (name.length < 2 || contact.length < 6 || place.length < 5 || device.length < 2 || kind.length < 3 || problem.length < 10) {
     return res.status(400).json({ error: 'Revisa los datos: completa nombre, contacto, dirección, equipo y una descripción de al menos 10 caracteres.' });
   }
   if ([name, contact, place, device, problem].some(v => v.length > 1200)) {
@@ -22,9 +22,9 @@ export default handler(async (req, res) => {
   const token = randomBytes(32).toString('base64url');
   const [order] = await db()`
     insert into service_orders
-      (organization_id, customer_name, phone, address, equipment, description, quoted_amount, status, tracking_token_hash)
+      (organization_id, customer_name, phone, address, equipment, service_type, description, quoted_amount, status, tracking_token_hash)
     values
-      (${organization.id}, ${name}, ${contact}, ${place}, ${device}, ${problem}, 0, 'Pendiente', ${hash(token)})
+      (${organization.id}, ${name}, ${contact}, ${place}, ${device}, ${kind}, ${problem}, 0, 'Pendiente', ${hash(token)})
     returning id, status, created_at
   `;
   await db()`insert into order_history(order_id, changed_by, status) values(${order.id}, null, 'Pendiente')`;
