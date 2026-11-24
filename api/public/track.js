@@ -10,12 +10,13 @@ export default handler(async (req, res) => {
   const token = typeof req.query.token === 'string' ? req.query.token : '';
   if (token.length < 30 || token.length > 100) return res.status(400).json({ error: 'Código de seguimiento inválido.' });
   const [order] = await db()`
-    select id, customer_name, equipment, service_type, description, status, created_at, updated_at
-    from service_orders where tracking_token_hash = ${hash(token)} limit 1
+    select o.id, o.customer_name, o.equipment, o.service_type, o.description, o.status, o.created_at, o.updated_at, u.full_name as assigned_to_name
+    from service_orders o left join users u on u.id = o.assigned_to
+    where o.tracking_token_hash = ${hash(token)} limit 1
   `;
   if (!order) return res.status(404).json({ error: 'No encontramos una solicitud con ese enlace de seguimiento.' });
   const history = await db()`
-    select status, created_at from order_history where order_id = ${order.id} order by created_at asc
+    select case when event_type = 'created' then 'Solicitud recibida' when event_type = 'assignment' then 'Técnico asignado: ' || coalesce(details->>'technician_name','pendiente de confirmar') when event_type = 'status' then 'Estado: ' || status else event_type end as status, created_at from order_history where order_id = ${order.id} order by created_at asc
   `;
   res.json({ request: { ...order, code: 'R360-' + order.id.slice(0, 8).toUpperCase() }, history });
 });
