@@ -162,3 +162,6 @@
 .evidence-gallery small{display:block;font-size:9px;line-height:1.4;margin-top:4px}
 .customer-evidence{margin-top:12px;width:100%}
 .customer-gallery{margin-top:14px}
+
+
+.tracking-update{margin:12px 0;padding:14px 16px;border:1px solid #cfe5e1;border-radius:12px;background:#f0f8f6;color:#176d64;line-height:1.5;font-size:.94rem}.customer-status-message{line-height:1.5}.order-action-error{margin-top:10px;font-size:.9rem}
