@@ -8,7 +8,8 @@ export default handler(async (req, res) => {
   if (req.method === 'GET') {
     if (!['owner','admin','technician'].includes(me.role)) return res.status(403).json({ error: 'No tienes permisos.' });
     const rows = await db()`
-      select o.*, u.full_name as assigned_to_name
+      select o.*, u.full_name as assigned_to_name,
+        (select max(h.created_at) from order_history h where h.order_id = o.id) as last_activity_at
       from service_orders o
       left join users u on u.id = o.assigned_to
       where o.organization_id = ${me.organization_id}
